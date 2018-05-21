@@ -6,7 +6,8 @@ suppressMessages(library(tidytext))
 
 library(ggplot2)
 library(forcats)
-
+library(snakecase)
+library(stringr)
 
 
 wordFreq <- function(file_in='../emails2.tsv', cloud=F, wordlength=3, top=15 ){
@@ -52,31 +53,34 @@ emailSentiments <- function(file_in='../emails2.tsv', recipients = 5, method='lo
 
   colnames(data) <- c("from", "to", "date", "message")
   
-  data$message <- gsub("None", "", data$message)
+  matchNames <- function(x){
+    splits <- str_split_fixed(x, ", ", 2)
+    paste(splits[,2], splits[,1], sep = ' ')
+  }
   
-  data$to <- htmlStrip(data$to)
   
-  msg_count <- nrow(data)
+  cleanData <- data %>% 
+    filter(from!='') %>% 
+    filter(message!='') %>% 
+    mutate(message = gsub("None", "", message)) %>% 
+    mutate(to = htmlStrip(to)) %>% 
+    mutate(to = trimws(to)) %>% 
+    mutate(to = ifelse(grepl(', ', to), matchNames(to), to)) %>% 
+    mutate(to = to_upper_camel_case(to, sep_out = " ")) %>% 
+    mutate(message = urlStrip(message)) %>% 
+    droplevels()
   
   # Get the top 5 recipients
-  
-  topRecips <- data %>% 
+  topRecips <- cleanData %>%
     group_by(to) %>% 
     tally() %>% 
     top_n(n=recipients)
   
-  top_recipients <- table(topRecips$to)
-
-  cleanData <- data %>% 
-    filter(from!='') %>% 
-    filter(message!='') %>% 
+  filtData <- cleanData %>% 
     filter(to %in% topRecips$to) %>% 
     droplevels()
   
-  # data$message <- gsub("(.*http.*)", "", data$message)
-  # data$message <- gsub("(.+www\\S+)", "", data$message)
-  
-  tokens <- cleanData %>% 
+  tokens <- filtData %>% 
     group_by(to) %>% 
     mutate(text = message) %>% 
     unnest_tokens(word, text) %>% 
@@ -138,6 +142,9 @@ htmlStrip <- function(y) {
   return(gsub("<.*?>", "", y))
 }
 
+urlStrip <- function(z){
+  return(gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", z))
+}
 
 makeCorpus <- function(df, wordlength=4){
   
