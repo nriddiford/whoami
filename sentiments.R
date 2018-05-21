@@ -10,7 +10,7 @@ library(snakecase)
 library(stringr)
 
 
-wordFreq <- function(file_in='../emails2.tsv', cloud=F, wordlength=3, top=15 ){
+wordFreq <- function(file_in='data/nick_email.tsv', cloud=F, wordlength=3, top=15 ){
   data <- suppressWarnings(read.table(file_in, header = F, sep='\t', fill=T))
 
   colnames(data) <- c("from", "to", "date", "message")
@@ -47,7 +47,7 @@ wordFreq <- function(file_in='../emails2.tsv', cloud=F, wordlength=3, top=15 ){
   }
 }
 
-emailSentiments <- function(file_in='../emails2.tsv', recipients = 5, method='loughran'){
+emailSentiments <- function(file_in='data/nick_email.tsv', recipients = 5, method='loughran'){
 
   data <- read.table(file_in, header = F, sep='\t', fill=T)
 
