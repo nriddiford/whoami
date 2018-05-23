@@ -20,11 +20,31 @@ server <- function(input, output, session) {
     
     d <- readEmails(inFile$datapath)
     
+    
+    # output$contents <- DT::renderDataTable(
+    #   d,
+    #   options = list(scrollX = TRUE)
+    # )
     # Main page
-    output$contents <- renderTable({
-      head(d, 25)
+    output$contents <- renderDataTable({
+      d
     })
     
+
+    observe({
+      updateSelectInput(session, inputId = 'wordlength', label = 'Minimum word length',
+                        choices = c(1:5), selected = 3)
+      updateSelectInput(session, inputId = 'top', label = 'Top n words to show',
+                        choices = c(1:5), selected = 15)
+    })
+    
+    # tabPanel 2 - Top words
+    output$wordCount <-renderPlot({
+      wordFreq(df =d, wordlength=input$wordlength, top=input$top)
+      
+    })
+    
+    # tabPanel 3 - Top words
     observe({
       updateSelectInput(session, inputId = 'method', label = 'Method',
                         choices = c("nrc", 'bing', 'loughran'), selected = 'loughran')

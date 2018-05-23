@@ -39,7 +39,15 @@ readEmails <- function(in_file='data/nick_email.tsv'){
   return(cleanData)
 }
 
-wordFreq <- function(file_in='data/nick_email.tsv', cloud=F, wordlength=3, top=15 ){
+wordFreq <- function(file_in='data/nick_email.tsv', df = NA, cloud=F, wordlength=3, top=15 ){
+  
+  if(is.na(df)){
+    data <- readEmails(file_in)
+  } else {
+    data <- df
+  }
+  
+  text_zize <- 300 / top 
   
   all <- makeCorpus(df=data, wordlength = wordlength)
   
@@ -54,7 +62,7 @@ wordFreq <- function(file_in='data/nick_email.tsv', cloud=F, wordlength=3, top=1
 
     division <- as.integer(max(d$freq)/10)
     p <- ggplot(d)
-    p <- p + geom_bar(aes(word, freq, fill="springgreen3"),stat='identity')
+    p <- p + geom_bar(aes(word, freq, fill="#5A9ED6"),stat='identity')
     p <- p + scale_y_continuous("Word frequency", breaks=seq(0,max(d$freq),by=division),expand=c(0.01,0))
     p <- p + scale_x_discrete("Word", expand = c(0.01,0.01))
 
@@ -62,7 +70,7 @@ wordFreq <- function(file_in='data/nick_email.tsv', cloud=F, wordlength=3, top=1
       theme(
         axis.title.x=element_blank(),
         axis.title.y=element_blank(),
-        axis.text = element_text(size=15),
+        axis.text = element_text(size=text_zize),
         panel.grid.major.x = element_line(color="grey80", size = 0.5, linetype = "dotted")
 
       )
@@ -124,7 +132,7 @@ emailSentiments <- function(file_in='data/nick_email.tsv', df=NA, recipients = 5
     tally() %>% 
     top_n(n=recipients)
   
-  filtData <- cleanData %>% 
+  filtData <- data %>% 
     filter(to %in% topRecips$to) %>% 
     droplevels()
   
