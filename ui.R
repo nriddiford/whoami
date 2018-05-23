@@ -8,9 +8,10 @@
 #
 
 library(shiny)
+library(shinythemes)
 
-ui <- fluidPage(
-  tabsetPanel(
+ui <- fluidPage(theme=shinytheme('flatly'),
+  navbarPage("whoami",
     # Tab 1
     tabPanel("Upload File",
              titlePanel("Upload your Emails log"),
@@ -30,41 +31,68 @@ ui <- fluidPage(
                  h3("Whoami? - an online tool to perform Sentiment Analysis on your emails"),
                  p("To start, you need to extract your emails (follow link in 'Click Here!' to see further details)"),
                  p("Once the file is uploaded, click on the tabs above to see different analyses of your emails"),
-                 dataTableOutput('contents')
-               )
-             )
-    ),
-    
-    # Tab 3
-    tabPanel("Word Frequency",
-             pageWithSidebar(
-               headerPanel('Most common words'),
-               sidebarPanel(
-                 
-                 sliderInput("wordlength", "Minimum word length",
-                             min = 2, max = 10, ""),
-                 sliderInput("top", "Top n words",
-                             min = 5, max = 50, "")
-                ),
-               mainPanel(
-                 plotOutput('wordCount')
+                 fluidPage(
+                   DT::dataTableOutput('contents'))
                )
              )
     ),
     
     # Tab 2
-    tabPanel("Sentiments",
+    tabPanel("Word Frequency",
              pageWithSidebar(
-               headerPanel('Sentiment Analysis of emails'),
+               headerPanel('Most common words'),
                sidebarPanel(
-                 selectInput('method', 'Method', ""),
-                 sliderInput("recipients", "Top n recipients",
+                 sliderInput("wordlength", "Minimum word length",
+                             min = 2, max = 10, ""),
+                 tags$hr(),
+                 sliderInput("top", "Top n words",
+                             min = 5, max = 50, "")
+                ),
+               
+               mainPanel(
+                 plotOutput('wordCount')
+               )
+              
+            )
+    ),
+    
+    # Tab 3
+    tabPanel("Sentiments",
+             plotOutput('sentiments'),
+             fluidRow(
+               column(3,
+             # pageWithSidebar(
+             #   headerPanel('Sentiment Analysis of emails'),
+             #   sidebarPanel(
+                 selectInput('method1', 'Method', "")
+               ),
+                column(3,
+                 sliderInput("top_recipients", "Top n recipients",
+                             min = 1, max = 10, "")
+                )
+             )
+               # ,
+               # mainPanel(
+               #   plotOutput('sentiments')
+               # )
+             # )
+    ),
+    
+    # Tab 4
+    tabPanel("Contributions",
+             pageWithSidebar(
+               headerPanel('Major contributing words'),
+               sidebarPanel(
+                 selectInput('method2', 'Method', ""),
+                 sliderInput("top_words", "Top n words in each category",
                              min = 1, max = 10, "")
                ),
-               mainPanel(
-                 plotOutput('sentiments')
+               fluidPage(
+                 plotOutput('contributions')
+                 # DT::dataTableOutput('contributionstbl')
                )
              )
-    )
+          )
+
   )
 )

@@ -1,12 +1,3 @@
-#
-# This is the server logic of a Shiny web application. You can run the 
-# application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-# 
-#    http://shiny.rstudio.com/
-#
-
 library(shiny)
 source("sentiments.R")
 
@@ -20,17 +11,21 @@ server <- function(input, output, session) {
     
     d <- readEmails(inFile$datapath)
     
-    
-    # output$contents <- DT::renderDataTable(
-    #   d,
-    #   options = list(scrollX = TRUE)
-    # )
-    # Main page
     output$contents <- renderDataTable({
       d
     })
     
-
+    
+    output$contents<-DT::renderDataTable({
+      DT::datatable(d,
+                    filter = list(position = "top"),
+                    options = list(searchHighlight=TRUE,
+                                   server = TRUE,
+                                   processing = FALSE))
+      })
+    
+    
+    # tabPanel 2 - Top words
     observe({
       updateSelectInput(session, inputId = 'wordlength', label = 'Minimum word length',
                         choices = c(1:5), selected = 3)
@@ -38,25 +33,44 @@ server <- function(input, output, session) {
                         choices = c(1:5), selected = 15)
     })
     
-    # tabPanel 2 - Top words
     output$wordCount <-renderPlot({
       wordFreq(df =d, wordlength=input$wordlength, top=input$top)
       
     })
     
-    # tabPanel 3 - Top words
+    # tabPanel 3 - Sentiments
     observe({
-      updateSelectInput(session, inputId = 'method', label = 'Method',
+      updateSelectInput(session, inputId = 'method1', label = 'Method',
                         choices = c("nrc", 'bing', 'loughran'), selected = 'loughran')
-      updateSelectInput(session, inputId = 'recipients', label = 'Top n recipients',
+      updateSelectInput(session, inputId = 'top_recipients', label = 'Top n recipients',
                         choices = c(1:10), selected = 5)
     })
     
-   
-    # tabPanel 1 - Number of messages
     output$sentiments <-renderPlot({
-      emailSentiments(df = d, recipients = input$recipients, method = input$method)
+      emailSentiments(df = d, top_recipients = input$top_recipients, method = input$method1)
     })
+    
+    # tabPanel 4 - Contributions
+    observe({
+      updateSelectInput(session, inputId = 'method2', label = 'Method',
+                        choices = c("nrc", 'bing', 'loughran'), selected = 'loughran')
+      updateSelectInput(session, inputId = 'top_words', label = 'Top n words in each category',
+                        choices = c(1:10), selected = 5)
+    })
+    
+    # ctable <- contributions(df = d, method = input$method2, top_words = input$top_words )
+    # output$contributionstbl<-DT::renderDataTable({
+    #   DT::datatable(ctable,
+    #                 filter = list(position = "top"),
+    #                 options = list(searchHighlight=TRUE,
+    #                                server = TRUE,
+    #                                processing = FALSE))
+    # })
+    # 
+    output$contributions <-renderPlot({
+      contributions(df = d, method = input$method2, top_words = input$top_words )
+    })
+    
   })
 
 }

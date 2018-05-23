@@ -34,6 +34,7 @@ readEmails <- function(in_file='data/nick_email.tsv'){
     mutate(to = ifelse(grepl(', ', to), matchNames(to), to)) %>% 
     mutate(to = to_upper_camel_case(to, sep_out = " ")) %>% 
     mutate(message = urlStrip(message)) %>% 
+    select(-from) %>% 
     droplevels()
   
   return(cleanData)
@@ -82,42 +83,64 @@ wordFreq <- function(file_in='data/nick_email.tsv', df = NA, cloud=F, wordlength
 }
 
 
-contributions <- function(file_in='data/nick_email.tsv', df=NA, recipients = 5, method='loughran'){
+contributions <- function(file_in='data/nick_email.tsv', df=NA, top_words = 5, method='loughran'){
   
   if(is.na(df)){
-    data <- readEmails(file_i)
+    data <- readEmails(file_in)
   } else {
     data <- df
   }
   
   tokens <- data %>% 
-    unnest_tokens(word, message) %>% 
+    group_by(to) %>% 
+    mutate(text = message) %>% 
+    unnest_tokens(word, text) %>% 
+    ungroup() %>% 
+    select(to, word) %>% 
+    droplevels()
+  
+  excludedWords <- c("none", "nick", "riddiford")
+  
+  filtToks <- tokens %>% 
     filter(!word %in% excludedWords) %>% 
-    anti_join(stop_words) #Data provided by the tidytext package
+    select(to, word) %>%
+    droplevels()
   
-    
-  sentimentedTokens <- tokens %>%
+  sentimentedTokens <- filtToks %>%
+    group_by(to, word) %>% 
     inner_join(get_sentiments(method)) %>% # pull out only sentiment words
-    count(word) %>% 
-    arrange(desc(n))
+    count(sentiment, sort =T) 
   
+  # Get the top words in each category
+  topWords <- sentimentedTokens %>%
+    mutate(wordCount=n) %>% 
+    group_by(sentiment, word) %>%
+    tally() %>% 
+    top_n(n=top_words)
   
-  wordtbl <- sentimentedTokens %>%
-    #Right join gets all words in `my_word_list` to show null
-    mutate(word = color_tile("lightblue", "lightblue")(word),
-           instances = color_tile("lightpink", "lightpink")(n))
-    select(-n) %>% #Remove these fields
-    my_kable_styling(caption = "Dependency on Word Form")
+  # return(topWords)
   
-    viewer <- getOption("viewer")
-    viewer("http://localhost:8000")
-    view_kable(head(wordtbl), format = 'html', table.attr = "class=nofluid")
+  p <- ggplot(topWords)
+  p <- p + geom_bar(aes(fct_reorder(word, nn), nn, fill = sentiment), stat = "identity")
+  p <- p + guides(fill = FALSE)
+  p <- p + cleanTheme() +
+    theme(
+      panel.grid.major.x = element_line(color = "grey80", size = 0.5, linetype = "dotted"),
+      # axis.text.y = element_text(angle = 90, hjust = 1, vjust = 0.5),
+      axis.title.y = element_blank(),
+      axis.title.x = element_text(size=40))
+  p <- p + scale_y_continuous("Word count", expand = c(0.01,0.01))
+  p <- p + coord_flip()
+  p <- p + facet_wrap(~sentiment, scales='free')
+
+
+  p
     
   
 }
 
 
-emailSentiments <- function(file_in='data/nick_email.tsv', df=NA, recipients = 5, method='loughran'){
+emailSentiments <- function(file_in='data/nick_email.tsv', df=NA, recipient = NA, top_recipients = 5, method='loughran'){
 
   if(is.na(df)){
     data <- readEmails(file_i)
@@ -125,16 +148,22 @@ emailSentiments <- function(file_in='data/nick_email.tsv', df=NA, recipients = 5
     data <- df
   }
 
-
+  if(is.na(recipient)) {
   # Get the top 5 recipients
   topRecips <- data %>%
     group_by(to) %>% 
     tally() %>% 
-    top_n(n=recipients)
+    top_n(n=top_recipients)
+  
   
   filtData <- data %>% 
     filter(to %in% topRecips$to) %>% 
     droplevels()
+  } else {
+    filtData <- data %>% 
+      filter(to == recipient) %>% 
+      droplevels()
+  }
   
   tokens <- filtData %>% 
     group_by(to) %>% 
