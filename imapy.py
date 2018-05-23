@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 #
-# Very basic example of using Python and IMAP to iterate over emails in a
-# gmail folder/label.  This code is released into the public domain.
-#
-# RKI July 2013
+# Heavily inspired by:
 # http://www.voidynullness.net/blog/2013/07/25/gmail-email-with-python-via-imap/
 #
 import sys
@@ -17,7 +14,6 @@ import time
 start_time = time.time()
 
 from optparse import OptionParser
-
 
 from email_reply_parser import EmailReplyParser
 
@@ -75,8 +71,9 @@ def process_mailbox(M, options):
 
             reply = EmailReplyParser.parse_reply(body)
 
+            # reply_string = [str(r) for r in reply]
             reply_string = reply.replace('\n', ' ').replace('\r', '')
-            reply_string = email.utils.decode_rfc2231(reply_string)
+            # reply_string = email.utils.decode_rfc2231(reply_string)
 
             outFile.write("%s\t%s\t%s\t%s\n" % (msg['from'], msg['to'], send_date, reply_string))
 
