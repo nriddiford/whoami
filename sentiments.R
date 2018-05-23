@@ -129,7 +129,7 @@ contributions <- function(file_in='data/nick_email.tsv', df=NA, top_words = 5, m
       # axis.text.y = element_text(angle = 90, hjust = 1, vjust = 0.5),
       axis.title.y = element_blank(),
       axis.title.x = element_text(size=40))
-  p <- p + scale_y_continuous("Word count", expand = c(0.01,0.01))
+  p <- p + scale_y_continuous(expand = c(0.01,0.01))
   p <- p + coord_flip()
   p <- p + facet_wrap(~sentiment, scales='free')
 
