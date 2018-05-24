@@ -9,7 +9,7 @@ if(length(uninstalled_packages)){
 }
 
 for (i in 1:length(reqPackages)){
-  suppressWarnings(suppressMessages(library(i)))
+  suppressWarnings(suppressMessages(library(reqPackages[i],character.only=TRUE)))
 }
 
 
@@ -41,11 +41,9 @@ readEmails <- function(in_file='data/nick_email.tsv'){
 
 wordFreq <- function(file_in='data/nick_email.tsv', df = NA, cloud=F, wordlength=3, top=15 ){
   
-  if(is.na(df)){
-    data <- readEmails(file_in)
-  } else {
-    data <- df
-  }
+  ifelse(is.na(df),
+         data <- readEmails(file_in),
+         data <- df)
   
   text_zize <- 300 / top 
   
@@ -84,11 +82,9 @@ wordFreq <- function(file_in='data/nick_email.tsv', df = NA, cloud=F, wordlength
 
 contributions <- function(file_in='data/nick_email.tsv', df=NA, top_words = 5, method='loughran'){
   
-  if(is.na(df)){
-    data <- readEmails(file_in)
-  } else {
-    data <- df
-  }
+  ifelse(is.na(df),
+         data <- readEmails(file_in),
+         data <- df)
   
   tokens <- data %>% 
     group_by(to) %>% 
@@ -141,11 +137,9 @@ contributions <- function(file_in='data/nick_email.tsv', df=NA, top_words = 5, m
 
 emailSentiments <- function(file_in='data/nick_email.tsv', df=NA, recipient = NA, top_recipients = 5, method='loughran'){
 
-  if(is.na(df)){
-    data <- readEmails(file_i)
-  } else {
-    data <- df
-  }
+  ifelse(is.na(df),
+         data <- readEmails(file_in),
+         data <- df)
 
   if(is.na(recipient)) {
   # Get the top 5 recipients
