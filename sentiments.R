@@ -1,16 +1,16 @@
-suppressMessages(library(SnowballC))
-suppressMessages(library(wordcloud))
-suppressWarnings(suppressMessages(library(dplyr)))
-suppressMessages(library(tm))
-suppressMessages(library(tidytext))
+reqPackages <- c('SnowballC', 'dplyr', 'tm', 'tidytext',
+                      'ggplot2', 'forcats',
+                      'snakecase', 'stringr')
 
-library(ggplot2)
-library(forcats)
-library(snakecase)
-library(stringr)
-library(formattable) #For the color_tile function
-# library(evaluate)
-library(knitr)
+uninstalled_packages <- reqPackages[!(reqPackages %in% installed.packages()[,"Package"])]
+if(length(uninstalled_packages)){
+  cat('Installing missing packages...\n')
+  install.packages(uninstalled_packages)
+}
+
+for (i in 1:length(reqPackages)){
+  suppressWarnings(suppressMessages(library(i)))
+}
 
 
 readEmails <- function(in_file='data/nick_email.tsv'){
@@ -21,7 +21,6 @@ readEmails <- function(in_file='data/nick_email.tsv'){
     splits <- str_split_fixed(x, ", ", 2)
     paste(splits[,2], splits[,1], sep = ' ')
   }
-  
   
   cleanData <- data %>% 
     filter(from!='') %>% 

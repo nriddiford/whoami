@@ -1,0 +1,2 @@
+certifi==2018.4.16
+email-reply-parser==0.5.9
