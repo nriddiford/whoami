@@ -1,16 +1,16 @@
-reqPackages <- c('SnowballC', 'dplyr', 'tm', 'tidytext',
-                      'ggplot2', 'forcats',
-                      'snakecase', 'stringr')
+suppressMessages(library(SnowballC))
+suppressMessages(library(wordcloud))
+suppressWarnings(suppressMessages(library(dplyr)))
+suppressMessages(library(tm))
+suppressMessages(library(tidytext))
 
-uninstalled_packages <- reqPackages[!(reqPackages %in% installed.packages()[,"Package"])]
-if(length(uninstalled_packages)){
-  cat('Installing missing packages...\n')
-  install.packages(uninstalled_packages)
-}
-
-for (i in 1:length(reqPackages)){
-  suppressWarnings(suppressMessages(library(reqPackages[i],character.only=TRUE)))
-}
+library(ggplot2)
+library(forcats)
+library(snakecase)
+library(stringr)
+library(formattable) #For the color_tile function
+# library(evaluate)
+library(knitr)
 
 
 readEmails <- function(in_file='data/nick_email.tsv'){
@@ -21,6 +21,7 @@ readEmails <- function(in_file='data/nick_email.tsv'){
     splits <- str_split_fixed(x, ", ", 2)
     paste(splits[,2], splits[,1], sep = ' ')
   }
+  
   
   cleanData <- data %>% 
     filter(from!='') %>% 
@@ -41,9 +42,11 @@ readEmails <- function(in_file='data/nick_email.tsv'){
 
 wordFreq <- function(file_in='data/nick_email.tsv', df = NA, cloud=F, wordlength=3, top=15 ){
   
-  ifelse(is.na(df),
-         data <- readEmails(file_in),
-         data <- df)
+  if(is.na(df)){
+    data <- readEmails(file_in)
+  } else {
+    data <- df
+  }
   
   text_zize <- 300 / top 
   
@@ -82,9 +85,11 @@ wordFreq <- function(file_in='data/nick_email.tsv', df = NA, cloud=F, wordlength
 
 contributions <- function(file_in='data/nick_email.tsv', df=NA, top_words = 5, method='loughran'){
   
-  ifelse(is.na(df),
-         data <- readEmails(file_in),
-         data <- df)
+  if(is.na(df)){
+    data <- readEmails(file_in)
+  } else {
+    data <- df
+  }
   
   tokens <- data %>% 
     group_by(to) %>% 
@@ -137,9 +142,11 @@ contributions <- function(file_in='data/nick_email.tsv', df=NA, top_words = 5, m
 
 emailSentiments <- function(file_in='data/nick_email.tsv', df=NA, recipient = NA, top_recipients = 5, method='loughran'){
 
-  ifelse(is.na(df),
-         data <- readEmails(file_in),
-         data <- df)
+  if(is.na(df)){
+    data <- readEmails(file_i)
+  } else {
+    data <- df
+  }
 
   if(is.na(recipient)) {
   # Get the top 5 recipients
