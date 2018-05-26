@@ -10,31 +10,28 @@
 library(shiny)
 library(shinythemes)
 
-ui <- fluidPage(theme=shinytheme('flatly'),
-  navbarPage("whoami",
+shinyUI(fluidPage(
+  theme=shinytheme('flatly'),
+  navbarPage("whoami"),
+  tabsetPanel(
     # Tab 1
     tabPanel("Upload File",
              titlePanel("Upload your Emails log"),
              sidebarLayout(
                sidebarPanel(
-                 fileInput('file', 'Select your Email chat log',
-                           accept=c(".tsv", ".txt")
-                 ),
-                 
+                 fileInput('file', 'Select your Email chat log'),
                  tags$div(class="header", checked=NA,
                           tags$p("To see instructions on how to generate this file please: "),
                           tags$a(href="https://github.com/nriddiford/whoami/blob/master/README.md", "Click Here!")
-                 ),
-                 tags$hr()
+                 )
                ),
                mainPanel(
                  h3("Whoami? - an online tool to perform Sentiment Analysis on your emails"),
                  p("To start, you need to extract your emails (follow link in 'Click Here!' to see further details)"),
                  p("Once the file is uploaded, click on the tabs above to see different analyses of your emails"),
-                 fluidPage(
-                   DT::dataTableOutput('contents'))
-               )
-             )
+                 DT::DTOutput('contents')
+              )
+            )
     ),
     
     # Tab 2
@@ -95,4 +92,5 @@ ui <- fluidPage(theme=shinytheme('flatly'),
           )
 
   )
+ )
 )

@@ -2,8 +2,7 @@ library(shiny)
 source("sentiments.R")
 
 server <- function(input, output, session) {
-  output$contents <- renderTable({
-
+  observe({
     inFile <- input$file
     
     if (is.null(inFile))
@@ -11,18 +10,9 @@ server <- function(input, output, session) {
     
     d <- readEmails(inFile$datapath)
     
-    output$contents <- renderDataTable({
-      d
-    })
+    output$contents <- renderDT(d)
     
-    
-    output$contents<-DT::renderDataTable({
-      DT::datatable(d,
-                    filter = list(position = "top"),
-                    options = list(searchHighlight=TRUE,
-                                   server = TRUE,
-                                   processing = FALSE))
-      })
+    allWords <- makeCorpus(d=d)
     
     
     # tabPanel 2 - Top words
@@ -34,7 +24,7 @@ server <- function(input, output, session) {
     })
     
     output$wordCount <-renderPlot({
-      wordFreq(df =d, wordlength=input$wordlength, top=input$top)
+      wordFreq(corpus=allWords, wordlength=input$wordlength, top=input$top)
       
     })
     

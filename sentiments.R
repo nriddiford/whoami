@@ -1,17 +1,16 @@
-suppressMessages(library(SnowballC))
-suppressMessages(library(wordcloud))
-suppressWarnings(suppressMessages(library(dplyr)))
-suppressMessages(library(tm))
+suppressMessages(library(ggplot2))
 suppressMessages(library(tidytext))
-
-library(ggplot2)
-library(forcats)
-library(snakecase)
-library(stringr)
-library(formattable) #For the color_tile function
-# library(evaluate)
-library(knitr)
-
+suppressMessages(library(dplyr))
+suppressMessages(library(snakecase))
+suppressMessages(library(tm))
+suppressMessages(library(SnowballC))
+suppressMessages(library(stringr))
+suppressMessages(library(snakecase))
+suppressMessages(library(stringr))
+suppressMessages(library(forcats))
+suppressMessages(library(DT))
+suppressMessages(library(RJSONIO))
+suppressMessages(library(knitr))
 
 readEmails <- function(in_file='data/nick_email.tsv'){
   data <- suppressWarnings(read.table(in_file, header = F, sep='\t', fill=T))
@@ -21,7 +20,6 @@ readEmails <- function(in_file='data/nick_email.tsv'){
     splits <- str_split_fixed(x, ", ", 2)
     paste(splits[,2], splits[,1], sep = ' ')
   }
-  
   
   cleanData <- data %>% 
     filter(from!='') %>% 
@@ -40,56 +38,52 @@ readEmails <- function(in_file='data/nick_email.tsv'){
   return(cleanData)
 }
 
-wordFreq <- function(file_in='data/nick_email.tsv', df = NA, cloud=F, wordlength=3, top=15 ){
+
+wordFreq <- function(wordlength=3, corpus, top=15 ){
   
-  if(is.na(df)){
-    data <- readEmails(file_in)
-  } else {
-    data <- df
-  }
+  all <- corpus %>%
+    filter(nchar(as.character(word))>=wordlength)
   
   text_zize <- 300 / top 
   
-  all <- makeCorpus(df=data, wordlength = wordlength)
+  d <- all[1:15,]
+  d  <- transform(d , word = reorder(word, freq))
   
-  if(cloud){
-    wordcloud(words = all$word, freq = all$freq, min.freq = 5,
-              max.words=100, random.order=FALSE, rot.per=0.35,
-              colors=brewer.pal(8, "Dark2"),scale=c(4,1.2))
-  } else{
-
-    d <- all[1:top,]
-    d  <- transform(d , word = reorder(word, freq))
-
-    division <- as.integer(max(d$freq)/10)
-    p <- ggplot(d)
-    p <- p + geom_bar(aes(word, freq, fill="#5A9ED6"),stat='identity')
-    p <- p + scale_y_continuous("Word frequency", breaks=seq(0,max(d$freq),by=division),expand=c(0.01,0))
-    p <- p + scale_x_discrete("Word", expand = c(0.01,0.01))
-
-    p <- p + cleanTheme() +
-      theme(
-        axis.title.x=element_blank(),
-        axis.title.y=element_blank(),
-        axis.text = element_text(size=text_zize),
-        panel.grid.major.x = element_line(color="grey80", size = 0.5, linetype = "dotted")
-
-      )
-
-    p <- p + scale_fill_identity()
-    p <- p + coord_flip()
-    p
+  division <- plyr::round_any(ceiling(max(d$freq)/10), 10, f = ceiling)
+  
+  if(max(d$freq)>=100){
+    division <- plyr::round_any(ceiling(max(d$freq)/10), 50, f = ceiling)
   }
+  
+  if(max(d$freq)>=500){
+    division <- plyr::round_any(ceiling(max(d$freq)/10), 100, f = ceiling)
+  }
+  
+  p <- ggplot(d)
+  p <- p + geom_bar(aes(word, freq, fill="#5A9ED6"),stat='identity')
+  p <- p + scale_y_continuous("Word frequency", breaks=seq(0,max(d$freq),by=division),expand=c(0.01,0))
+  p <- p + scale_x_discrete("Word", expand = c(0.01,0.01))
+  
+  p <- p + cleanTheme() +
+    theme(
+      axis.title.x=element_blank(),
+      axis.title.y=element_blank(),
+      axis.text.y = element_text(size=20),
+      axis.text.x = element_text(size=15),
+      panel.grid.major.x = element_line(color="grey80", size = 0.5, linetype = "dotted")
+      
+    )
+  p <- p + scale_fill_identity()
+  p <- p + coord_flip()
+  p
 }
 
 
 contributions <- function(file_in='data/nick_email.tsv', df=NA, top_words = 5, method='loughran'){
   
-  if(is.na(df)){
-    data <- readEmails(file_in)
-  } else {
-    data <- df
-  }
+  ifelse(is.na(df),
+         data <- readEmails(file_in),
+         data <- df)
   
   tokens <- data %>% 
     group_by(to) %>% 
@@ -142,11 +136,9 @@ contributions <- function(file_in='data/nick_email.tsv', df=NA, top_words = 5, m
 
 emailSentiments <- function(file_in='data/nick_email.tsv', df=NA, recipient = NA, top_recipients = 5, method='loughran'){
 
-  if(is.na(df)){
-    data <- readEmails(file_i)
-  } else {
-    data <- df
-  }
+  ifelse(is.na(df),
+         data <- readEmails(file_in),
+         data <- df)
 
   if(is.na(recipient)) {
   # Get the top 5 recipients
@@ -239,11 +231,21 @@ urlStrip <- function(z){
   return(gsub(" ?(f|ht)tp(s?)://(.*)[.][a-z]+", "", z))
 }
 
-makeCorpus <- function(df, wordlength=4){
+
+#' makeCorpus
+#'
+#' Make a word corpus using tm pacakge from a datframe 
+#' @param d A dataframe containing messages
+#' @param wordlength Minimum word length 
+#' @keywords corpus
+#' @import tm, SnowballC, dplyr
+#' @export
+#' 
+makeCorpus <- function(d){
   
-  excludedWords <- c("none", "nick", "riddiford")
+  excludedWords <- c("best", "wishes", 'thanks', 'regards', 'Dear', 'to')
   
-  docs <- Corpus(VectorSource(df$message)) %>%
+  docs <- Corpus(VectorSource(d$message)) %>%
     tm_map(content_transformer(htmlStrip)) %>%  # removing email ids
     tm_map(content_transformer(RemoveEmail)) %>%  # removing email ids
     tm_map(removePunctuation) %>%
@@ -259,14 +261,13 @@ makeCorpus <- function(df, wordlength=4){
   v <- sort(rowSums(m),decreasing=TRUE)
   all <- data.frame(word = names(v),freq=v)
   
-  all <- all %>%
-    filter(nchar(as.character(word))>=wordlength) %>%
-    filter(nchar(as.character(word)) < 25) %>%
-    droplevels()
+  all <- all %>% 
+    filter(nchar(as.character(word)) < 25)
   
   return(all)
   
 }
+
 
 
 my_colors <- c("#E69F00", "#56B4E9", "#009E73", "#CC79A7", "#D55E00", "#D65E00")
