@@ -28,7 +28,7 @@ def process_mailbox(M, options):
 
     rv, data = M.search(None, "ALL")
     if rv != 'OK':
-        print "No messages found!"
+        print("No messages found!")
         return
 
     with open(options.output_file, 'w') as outFile:
@@ -36,7 +36,7 @@ def process_mailbox(M, options):
         for num in data[0].split():
             rv, data = M.fetch(num, '(RFC822)')
             if rv != 'OK':
-                print "ERROR getting message", num
+                print("ERROR getting message", num)
                 return
             if message_count % 100 == 0 and message_count > 0:
                 runTime = round((time.time() - start_time),1)
@@ -96,13 +96,13 @@ def get_args():
     parser.set_defaults(output_file='emails.tsv')
 
     options, args = parser.parse_args()
-    return (options, args)
+    return options, args
 
 
 
 def main():
     options, args = get_args()
-    print options
+    print(options)
 
     M = imaplib.IMAP4_SSL('imap.gmail.com')
 
@@ -110,10 +110,10 @@ def main():
         try:
             rv, data = M.login(options.email_address, getpass.getpass())
         except imaplib.IMAP4.error:
-            print "LOGIN FAILED!!! "
+            print("LOGIN FAILED!!! ")
             sys.exit(1)
 
-        print rv, data
+        print(rv, data)
 
         rv, mailboxes = M.list()
         # if rv == 'OK':
@@ -122,11 +122,11 @@ def main():
 
         rv, data = M.select(EMAIL_FOLDER)
         if rv == 'OK':
-            print "Processing mailbox...\n"
+            print("Processing mailbox...\n")
             process_mailbox(M, options)
             M.close()
         else:
-            print "ERROR: Unable to open mailbox ", rv
+            print("ERROR: Unable to open mailbox ", rv)
 
         M.logout()
 
